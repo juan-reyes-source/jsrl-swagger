@@ -56,7 +56,7 @@ class FlaskSwagger(metaclass=SingletonMeta):
         print("...Extracting tags from blueprints...")
         self._extract_blueprints_information()
         print("...Extracting endpoints information...")
-        self._extract_endpoints()
+        self._extract_endpoints(additional_methods)
         self.swagger_builder.register_swagger_paths(self._endpoints)
         print("...Build yaml file...")
         return self.swagger_builder.build(filename)
