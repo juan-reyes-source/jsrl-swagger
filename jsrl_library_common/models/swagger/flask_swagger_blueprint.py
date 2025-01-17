@@ -1,7 +1,6 @@
 from os import PathLike
 from flask import Blueprint
 from typing import Any
-from jsrl_library_common.models.swagger.flask_swagger_models import FlaskSwagger
 
 class SwaggerFlaskBlueprint(Blueprint):
     """Extend the origin Blueprint class to support the swagger \
@@ -10,7 +9,7 @@ class SwaggerFlaskBlueprint(Blueprint):
     Additional arguments:
         - swagger_tag_name (str|None): the name of the swagger tag related to this blueprint
         - swagger_tag_description (str|None): the description of swagger tag
-        - swagger_schemas (module): the swagger schemas module
+        - swagger_schemas_modules (list): the swagger schemas modules
     """
 
     def __init__(self, 
@@ -29,11 +28,10 @@ class SwaggerFlaskBlueprint(Blueprint):
                  swagger_schemas = None) -> None:
         """Extend the normal Blueprint with swagger definition
         """
-        self.swagger = FlaskSwagger()
-        self.swagger_tag_name = self._register_swagger_tag(name,
+        self.swagger_tag_spec = self._register_swagger_tag(name,
                                                            swagger_tag_name,
                                                            swagger_tag_description)
-        self._register_swagger_schemas(swagger_schemas)
+        self.swagger_schemas_modules = swagger_schemas
         super().__init__(name,
                          import_name,
                          static_folder,
@@ -67,20 +65,4 @@ class SwaggerFlaskBlueprint(Blueprint):
         if swagger_tag_description:
             swagger_tag_spec["description"] = swagger_tag_description
 
-        self.swagger.register_swagger_tag(blueprint_name,
-                                          **swagger_tag_spec)
-        return swagger_tag_spec["name"]
-
-
-    def _register_swagger_schemas(self, schemas):
-        """Register the swagger schemas record by this blueprint
-
-        Args:
-            - schemas (module): the schemas python module
-        """
-        if schemas:
-            schemas_cnts = [ schema for schema in dir(schemas) if not schema.startswith("_") ]
-            for schema_cnts in schemas_cnts:
-                schema = getattr(schemas,
-                                 schema_cnts)
-                self.swagger.register_swagger_schema(schema)
+        return swagger_tag_spec
