@@ -37,7 +37,7 @@ class BuildSwaggerDoc:
 
         self._default_schemas_module = swagger_schemas
         self._default_security_schemas_module = swagger_security_schemas
-        self.__register_default_schemas()
+        self._register_default_schemas()
         self._register_default_security_schemas()
 
 
@@ -622,7 +622,7 @@ class BuildSwaggerDoc:
         for schema_cnts in schemas_cnts:
             schema = getattr(schema_module,
                              schema_cnts)
-            schema_spec, schema_name = self.__build_swagger_components_schema(schema)
+            schema_spec, schema_name = self._build_swagger_components_schema(schema)
             components["schemas"][schema_name] = schema_spec
             schema_ref_name = self._get_swagger_schema_ref(schema["$id"])
             print(f"Schema {schema_name}: registered successfully. ({schema_ref_name})")
