@@ -1,3 +1,5 @@
+import os
+import importlib
 from jsrl_library_common.schemas import swagger as swagger_schemas
 from jsrl_library_common.constants.swagger import swagger_constants as swagger_cnts
 from jsrl_library_common.constants.swagger import swagger_security_schemas
@@ -88,6 +90,34 @@ class BuildSwaggerDoc:
             new_servers += self._specifications["servers"]
         
         self._specifications["servers"] = new_servers
+
+
+    def transform_tag_name(self, tag):
+        """Change the snake camel case to normal name (replace the "_" character to " ")
+
+        Args:
+            - tag (str): the tag name
+
+        Returns:
+            - str: the tag without "_" characters
+        """
+        return tag.replace("_", " ")\
+                  .title()
+    
+    
+    def transform_snake_to_lower_camel_case(self, value: str):
+        """Transform the value to lower camel case
+
+        Args:
+            - value (str): the value to transform a lower case
+
+        Returns:
+            - str: the value in lower case format
+        """
+        words = value.strip().split("_")
+        if len(words) > 1:
+            words = [words[0]] + [word.title() for word in words[1:]]
+        return ''.join(words)
             
 
     def register_swagger_path(self,
@@ -147,7 +177,7 @@ class BuildSwaggerDoc:
             - schema (dict): the schema to registry
         """
         components = self._specifications.get("components", {"schemas": {}})
-        schema_spec, schema_name = self.__build_swagger_components_schema(schema)
+        schema_spec, schema_name = self._build_swagger_components_schema(schema)
         components["schemas"][schema_name] = schema_spec
         self._specifications["components"] = components
         schema_ref_name = self._get_swagger_schema_ref(schema["$id"])
@@ -156,13 +186,16 @@ class BuildSwaggerDoc:
     
 
     def register_swagger_paths_request_bodies(self, path_request_bodies):
-        """
+        """Register the request bodies for specific swagger path
+
         Args:
-            - path_request_bodies (dict): 
-                - url
-                    - method
-                        - mime-type
-                        - refs
+            - path_request_bodies (dict): the url request bodies by method
+                - key: the swagger path
+                - value: 
+                    - key: the swagger path method
+                    - value:
+                        - mime-type: the request body mimetype
+                        - refs: the possible schemas for this request body
         """
         for url in path_request_bodies:
             for method in path_request_bodies[url]:
@@ -175,28 +208,6 @@ class BuildSwaggerDoc:
                     **request_body
                 }
                 self._specifications["paths"][url][method]["requestBody"] = request_bodies
-
-
-    def register_swagger_security_schemas(self, value):
-        """
-        """
-
-
-
-    def transform_tag_name(self, tag):
-        """
-        """
-        return tag.replace("_", " ")\
-                  .title()
-    
-    
-    def transform_snake_to_lower_camel_case(self, value: str):
-        """
-        """
-        words = value.strip().split("_")
-        if len(words) > 1:
-            words = [words[0]] + [word.title() for word in words[1:]]
-        return ''.join(words)
 
 
     def define_path_params(self,
@@ -316,7 +327,14 @@ class BuildSwaggerDoc:
     def define_request_body_with_ref(self,
                                      mimetype,
                                      components_ref):
-        """
+        """Define the swagger request body with $ref attribute
+
+        Args:
+            - mimetype (str): the request body mimetype
+            - components_ref (list): the possible models for request body (the components ref path)
+
+        Returns:
+            - dict: the swagger specification
         """
         schema_refs = {"$ref": components_ref[-1]}
         if len(components_ref) > 1:
@@ -335,7 +353,17 @@ class BuildSwaggerDoc:
                                          components_ref,
                                          description=None,
                                          examples=None):
-        """
+        """Define the swagger request response with $ref attribute
+
+        Args:
+            - status_code (str): the status code for response
+            - mimetype (str): the request body mimetype
+            - components_ref (list): the possible models for request body (the components ref path)
+            - description (str|None): the response description
+            - examples (dict|None): the response examples
+
+        Returns:
+            - dict: the swagger specification
         """
         schema_refs = {"$ref": components_ref[-1]}
         if len(components_ref) > 1:
@@ -401,7 +429,10 @@ class BuildSwaggerDoc:
     
 
     def define_request_responses_options_method(self):
-        """
+        """Define the swagger request response for option method
+
+        Returns:
+            - dict: the swagger specification
         """
         return {
             "200": {
@@ -460,10 +491,42 @@ class BuildSwaggerDoc:
         return "#/components/" + '/'.join(json_schema_id.split("/")[-2:])
 
 
+    def _adjust_swagger_schema_refs(self, schema):
+        """Overwrite the $ref features in schema model usign the swagger notation
+
+        Args:
+            - schema (Any): the schema to adjust the $ref
+
+        Returns:
+            - Any: the set up schema
+        """
+        if type(schema) is not dict:
+            return schema
+        if schema.get("$ref"):
+            schema["$ref"] = self._get_swagger_schema_ref(schema["$ref"])
+        
+        if schema.get("allOf"):
+            schema["allOf"] = [self._adjust_swagger_schema_refs(ref) for ref in schema["allOf"]]
+        
+        elif schema.get("oneOf"):
+            schema["oneOf"] = [self._adjust_swagger_schema_refs(ref) for ref in schema["oneOf"]]
+        
+        elif schema.get("anyOf"):
+            schema["anyOf"] = [self._adjust_swagger_schema_refs(ref) for ref in schema["anyOf"]]
+        
+        if schema.get("properties"):
+            schema["properties"] = {proper:self._adjust_swagger_schema_refs(schema["properties"][proper])
+                                    for proper in schema["properties"]}
+        
+        if schema.get("items"):
+            schema["items"] = self._adjust_swagger_schema_refs(schema["items"])
+
+        return schema
+
+
     def _build_swagger_tag_specification(self,
                                           tag):
-        """Build the swagger specification structure to define a
-        tag
+        """Build the swagger specification structure to define a tag
 
         Args:
             - tag (dict): the tag information
@@ -529,7 +592,7 @@ class BuildSwaggerDoc:
         return path_spec
     
 
-    def __build_swagger_components_schema(self, schema):
+    def _build_swagger_components_schema(self, schema):
         """Build the schema specification to can register in swagger
         components
 
@@ -544,42 +607,17 @@ class BuildSwaggerDoc:
         schema_spec.pop("$schema", None)
         schema_spec.pop("additionalProperties", None)
         schema_name = self._get_swagger_schema_name(schema_spec.pop("$id"))
-        schema_spec = self.__adjust_swagger_schema_refs(schema_spec)
+        schema_spec = self._adjust_swagger_schema_refs(schema_spec)
         return schema_spec, schema_name
         
-    
-    def __adjust_swagger_schema_refs(self, schema):
-        """
-        """
-        if type(schema) is not dict:
-            return schema
-        if schema.get("$ref"):
-            schema["$ref"] = self._get_swagger_schema_ref(schema["$ref"])
-        
-        if schema.get("allOf"):
-            schema["allOf"] = [self.__adjust_swagger_schema_refs(ref) for ref in schema["allOf"]]
-        
-        elif schema.get("oneOf"):
-            schema["oneOf"] = [self.__adjust_swagger_schema_refs(ref) for ref in schema["oneOf"]]
-        
-        elif schema.get("anyOf"):
-            schema["anyOf"] = [self.__adjust_swagger_schema_refs(ref) for ref in schema["anyOf"]]
-        
-        if schema.get("properties"):
-            schema["properties"] = {proper:self.__adjust_swagger_schema_refs(schema["properties"][proper])
-                                    for proper in schema["properties"]}
-        
-        if schema.get("items"):
-            schema["items"] = self.__adjust_swagger_schema_refs(schema["items"])
 
-        return schema
-
-    def __register_default_schemas(self):
-        """
+    def _register_default_schemas(self):
+        """Register the swagger default schemas defined in this library
         """
         schema_module = self._default_schemas_module
         components = self._specifications.get("components",
                                               {"schemas": {}})
+        
         schemas_cnts = [ schema for schema in dir(schema_module) if not schema.startswith("_") ]
         for schema_cnts in schemas_cnts:
             schema = getattr(schema_module,
@@ -593,15 +631,14 @@ class BuildSwaggerDoc:
 
 
     def _register_default_security_schemas(self):
+        """Register the swagger default security schemas defined
+        in this library
         """
-        """
-        schemas_module = self._default_security_schemas_module
         components = self._specifications.get("components", {})
         components["securitySchemes"] = components.get("securitySchemes", {})
-        schemas_cnts = [ schema for schema in dir(schemas_module) if not schema.startswith("_") ]
-        for schema_cnts in schemas_cnts:
-            schema = getattr(schemas_module,
-                             schema_cnts)
+        schemas_cnts = self._extract_swagger_schemas_constants()
+        for schemas_module, schema_cnts in schemas_cnts:
+            schema = getattr(schemas_module, schema_cnts)
             components["securitySchemes"] = {
                 **components["securitySchemes"],
                 **schema
@@ -609,3 +646,19 @@ class BuildSwaggerDoc:
 
         self._specifications["components"] = components
 
+
+    def _extract_swagger_schemas_constants(self):
+        """Get the default swagger schema constants defined in schemas swagger folder
+
+        Returns:
+            - list: the schema module with its constants
+        """
+        schema_cnts = []
+        swagger_schema_module = self._default_schemas_module
+        sub_modules = [file.replace(".py", "") for file in os.listdir(swagger_schema_module.__path__[0])
+                                               if not file.startswith("_")]
+        sub_modules = [importlib.import_module(swagger_schema_module.__name__ + "." + sub_module)
+                       for sub_module in sub_modules]
+        for schema_module in sub_modules:
+            schema_cnts += [(schema_module, schema) for schema in dir(schema_module) if not schema.startswith("_")]
+        return schema_cnts
