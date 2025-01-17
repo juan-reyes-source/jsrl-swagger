@@ -68,11 +68,13 @@ For create a swagger tag, you can use the `SwaggerFlaskBlueprint` (Check class d
 **Example**
 
 ```py
+from demo.schemas import hello_schemas
 ...
 HELLO_RESOURCE = SwaggerFlaskBlueprint("hello_resource",
                                        __name__,
                                        swagger_tag_name="My Group",
-                                       swagger_tag_description="Endpoints related to my first api with swagger implementation")
+                                       swagger_tag_description="Endpoints related to my first api with swagger implementation",
+                                       swagger_schemas_modules=[hello_schemas])
 ...
 ```
 
@@ -441,6 +443,27 @@ def say_hello():
 ```
 
 ### Define request bodies
+
+When you want to define request bodies, in the documentation of the function, you have to define the structure data types, and additional information about those arguments, for that you can use one of the following options (depending on your context)
+
+**NOTE**: It important highlight that in this part the schemas must be registered in the blueprint and each value defined in the schemas list of request bodies documentation must be the attribute `$id` of the schema.
+
+#### Obligatory fields
+```py
+@HELLO_RESOURCE.route("/say-hello/<string:name>",
+                      methods=["GET"])
+def say_hello():
+    """
+    ...
+
+    Request bodies:
+        application/json:
+            schemas:
+                - https://example.com/schemas/REQUESTPORTFOLIOGENERATEREPORT
+
+    ...
+    """
+```
 
 
 

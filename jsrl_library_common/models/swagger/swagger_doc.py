@@ -326,12 +326,14 @@ class BuildSwaggerDoc:
 
     def define_request_body_with_ref(self,
                                      mimetype,
-                                     components_ref):
+                                     components_ref,
+                                     examples=None):
         """Define the swagger request body with $ref attribute
 
         Args:
             - mimetype (str): the request body mimetype
             - components_ref (list): the possible models for request body (the components ref path)
+            - examples (dict): the request body examples
 
         Returns:
             - dict: the swagger specification
@@ -340,11 +342,16 @@ class BuildSwaggerDoc:
         if len(components_ref) > 1:
             schema_refs = {"oneOf": [{"$ref": ref} 
                            for ref in components_ref]}
-        return {
+        response = {
             mimetype: {
                 "schema": schema_refs
             }
         }
+
+        if examples:
+            response[mimetype]["examples"] = examples
+
+        return response
     
 
     def define_request_response_with_ref(self,

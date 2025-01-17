@@ -326,7 +326,8 @@ class FlaskSwagger(metaclass=SingletonMeta):
                               for schema_id in params_spec[mimetype]["schemas"]]
             
             schema_bodies = self.swagger_builder.define_request_body_with_ref(mimetype,
-                                                                              request_bodies)
+                                                                              request_bodies,
+                                                                              params_spec[mimetype].get("examples"))
             response = {
                 **response,
                 **schema_bodies
