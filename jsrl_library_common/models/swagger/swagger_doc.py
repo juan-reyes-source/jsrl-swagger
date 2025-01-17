@@ -614,14 +614,12 @@ class BuildSwaggerDoc:
     def _register_default_schemas(self):
         """Register the swagger default schemas defined in this library
         """
-        schema_module = self._default_schemas_module
         components = self._specifications.get("components",
                                               {"schemas": {}})
         
-        schemas_cnts = [ schema for schema in dir(schema_module) if not schema.startswith("_") ]
-        for schema_cnts in schemas_cnts:
-            schema = getattr(schema_module,
-                             schema_cnts)
+        schemas_cnts = self._extract_swagger_schemas_constants()
+        for schema_module, schema_cnts in schemas_cnts:
+            schema = getattr(schema_module, schema_cnts)
             schema_spec, schema_name = self._build_swagger_components_schema(schema)
             components["schemas"][schema_name] = schema_spec
             schema_ref_name = self._get_swagger_schema_ref(schema["$id"])
@@ -634,10 +632,11 @@ class BuildSwaggerDoc:
         """Register the swagger default security schemas defined
         in this library
         """
+        schemas_module = self._default_security_schemas_module
         components = self._specifications.get("components", {})
         components["securitySchemes"] = components.get("securitySchemes", {})
-        schemas_cnts = self._extract_swagger_schemas_constants()
-        for schemas_module, schema_cnts in schemas_cnts:
+        schemas_cnts = [ schema for schema in dir(schemas_module) if not schema.startswith("_") ]
+        for schema_cnts in schemas_cnts:
             schema = getattr(schemas_module, schema_cnts)
             components["securitySchemes"] = {
                 **components["securitySchemes"],
