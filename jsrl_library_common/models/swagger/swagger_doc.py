@@ -120,9 +120,9 @@ class BuildSwaggerDoc:
         """
         for path in paths:
             for method in paths[path]:
-                path_spec = self.__build_swagger_path_specification(path,
-                                                                    method,
-                                                                    paths[path][method])
+                path_spec = self._build_swagger_path_specification(path,
+                                                                   method,
+                                                                   paths[path][method])
                 self._specifications["paths"][path] = path_spec
 
 
@@ -134,14 +134,17 @@ class BuildSwaggerDoc:
             - tags (list[dict]): the tags to register
         """
         self._specifications["tags"] = [
-            self.__build_swagger_tag_specification(tags[tag])
+            self._build_swagger_tag_specification(tags[tag])
             for tag in tags
         ]
 
 
     def register_swagger_component_schema(self,
                                           schema):
-        """
+        """Register swagger schema in components section
+
+        Args:
+            - schema (dict): the schema to registry
         """
         components = self._specifications.get("components", {"schemas": {}})
         schema_spec, schema_name = self.__build_swagger_components_schema(schema)
@@ -457,7 +460,7 @@ class BuildSwaggerDoc:
         return "#/components/" + '/'.join(json_schema_id.split("/")[-2:])
 
 
-    def __build_swagger_tag_specification(self,
+    def _build_swagger_tag_specification(self,
                                           tag):
         """Build the swagger specification structure to define a
         tag
