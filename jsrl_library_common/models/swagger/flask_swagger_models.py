@@ -181,7 +181,7 @@ class FlaskSwagger(metaclass=SingletonMeta):
         for schema_module in schemas:
             schemas_cnts = [ schema for schema in dir(schema_module) if not schema.startswith("_") ]
             for schema_cnts in schemas_cnts:
-                schema = getattr(schemas, schema_cnts)
+                schema = getattr(schema_module, schema_cnts)
                 schema_ref_name = self.swagger_builder.register_swagger_component_schema(schema)
                 self._models[schema_ref_name] = self._models.get(schema_ref_name, {})
 
