@@ -352,7 +352,8 @@ class BuildSwaggerDoc:
                                          mimetype,
                                          components_ref,
                                          description=None,
-                                         examples=None):
+                                         examples=None,
+                                         headers=None):
         """Define the swagger request response with $ref attribute
 
         Args:
@@ -361,6 +362,7 @@ class BuildSwaggerDoc:
             - components_ref (list): the possible models for request body (the components ref path)
             - description (str|None): the response description
             - examples (dict|None): the response examples
+            - headers (dict|None): the response headers
 
         Returns:
             - dict: the swagger specification
@@ -371,17 +373,18 @@ class BuildSwaggerDoc:
                            for ref in components_ref]}
             
         status_code_spec = swagger_cnts.QuotedStr(status_code)
-        response = {
-            status_code_spec: {
-                "content": {
-                    mimetype: {
-                        "schema": schema_refs
-                    }
-                }
-            }
-        }
+        response = {status_code_spec: {}}
         if description:
             response[status_code_spec]["description"] = description
+
+        if headers:
+            response[status_code_spec]["headers"] = headers
+
+        response[status_code_spec]["content"] = {
+            mimetype: {
+                "schema": schema_refs
+            }
+        }
 
         if examples:
             response[status_code_spec]["content"][mimetype]["examples"] = examples

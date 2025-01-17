@@ -356,7 +356,8 @@ class FlaskSwagger(metaclass=SingletonMeta):
                                                                                          mimetype,
                                                                                          request_responses,
                                                                                          params_spec[status_code].get("description"),
-                                                                                         params_spec[status_code]["mime-types"][mimetype].get("examples"))
+                                                                                         params_spec[status_code]["mime-types"][mimetype].get("examples"),
+                                                                                         params_spec[status_code].get("headers"))
             
                 response = {
                     **response,
