@@ -26,11 +26,22 @@ generate_wheel_file () {
     rm -r venv
 }
 
-main () {
+update_tag_version_code () {
     cd ..
-    delete_dist
-    cd deploy
-    generate_wheel_file
+    library_version=v$(python3 -B -c "from setup import LIBRARY_VERSION;print(LIBRARY_VERSION)")
+    echo $library_version
+    git tag -d $library_version
+    git tag $library_version
+
+    git push origin :$library_version
+    git push origin $library_version
+
+    git fetch --tags
+}
+
+
+main () {
+    update_tag_version_code
 }
 
 main
