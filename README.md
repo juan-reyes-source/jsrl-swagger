@@ -446,7 +446,7 @@ def say_hello():
 
 When you want to define request bodies, in the documentation of the function, you have to define the structure data types, and additional information about those arguments, for that you can use one of the following options (depending on your context)
 
-**NOTE**: It important highlight that in this part the schemas must be registered in the blueprint and each value defined in the schemas list of request bodies documentation must be the attribute `$id` of the schema.
+**NOTE**: It important highlight that in this part the schemas must be registered in the blueprint and each value defined in the schemas list of request bodies documentation must be the attribute `$id` of the schema. Besides, for the schema name (`$id`) is recommended use in this scenario the prefix REQUEST, and its name must be alphabetic.
 
 #### Obligatory fields
 ```py
@@ -465,6 +465,81 @@ def say_hello():
     """
 ```
 
+#### Configuration with examples
+```py
+@HELLO_RESOURCE.route("/say-hello/<string:name>",
+                      methods=["GET"])
+def say_hello():
+    """
+    ...
+
+    Request bodies:
+        application/json:
+            schemas:
+                - https://example.com/schemas/REQUESTHELLOUSERINFO
+            examples:
+                basicCase:
+                    summary: Base case
+                    value:
+                        age: 1
+                        nickname: "acme"
+    ...
+    """
+```
+
+### Define request responses
+
+When you want to define request responses, in the documentation of the function, you have to define the structure data types, and additional information about those arguments, for that you can use one of the following options (depending on your context)
+
+**NOTE**: It important highlight that in this part the schemas must be registered in the blueprint and each value defined in the schemas list of request bodies documentation must be the attribute `$id` of the schema. Besides, for the schema name (`$id`) is recommended use in this scenario the prefix RESPONSE, and its name must be alphabetic.
+
+#### Complete examples
+```py
+@HELLO_RESOURCE.route("/say-hello/<string:name>",
+                      methods=["GET"])
+def say_hello():
+    """
+    ...
+
+    Request responses:
+        200:
+            description: The salutation was generated successfully
+            headers:
+                Access-Control-Allow-Origin:
+                    schema:
+                        type: "string"
+            mime-types:
+                application/json:
+                    schemas:
+                        - https://example.com/schemas/RESPONSEHELLOUSERINFO
+
+    ...
+    """
+```
+
+### Define security features
+
+When you want to define x-api-key and Authorization attributes, you can use the following specification where:
+
+- `api-key`: Define that you API required a `x-api-key` attribute in headers
+- `swagger-authorization`: Define that this specific endpoint required the `Authorization` attributes and the list of elements related to this attribute are the scopes expected in the access token.
+
+#### Complete examples
+```py
+@HELLO_RESOURCE.route("/say-hello/<string:name>",
+                      methods=["GET"])
+def say_hello():
+    """
+    ...
+
+    Security:
+        - api-key
+        - swagger-authorization:
+            - demo/internal
+
+    ...
+    """
+```
 
 
 ## Tutorial 
