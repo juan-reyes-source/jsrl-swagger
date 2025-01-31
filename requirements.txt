@@ -1,1 +1,3 @@
 PyYAML==6.0.2
+
+pip install jsrl_library_common --extra-index-url https://github.com/juan-reyes-source/jsrl-swagger

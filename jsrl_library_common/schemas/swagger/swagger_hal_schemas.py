@@ -41,6 +41,9 @@ HAL_SCHEMA_WITH_SINCE_PAGINATION = {
                     "type": "string"
                 }
             }
+        },
+        "_totalCount": {
+            "type": "integer"
         }
     }
 }
